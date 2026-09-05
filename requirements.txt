@@ -1,1 +1,5 @@
+# Opção 1: agente.py (Claude API)
 anthropic>=0.91.0
+
+# Opção 2: agente_local.py (Ollama, roda local sem custo de API)
+ollama>=0.6.2
