@@ -5,7 +5,7 @@ dados_cliente.py), mas gera as respostas com um modelo aberto rodando
 localmente via Ollama em vez da API da Anthropic.
 
 Requer o Ollama instalado e rodando (http://localhost:11434) e o modelo
-baixado com `ollama pull llama3.2:3b` (ou outro - ajuste MODEL abaixo).
+baixado com `ollama pull llama3.1:8b` (ou outro - ajuste MODEL abaixo).
 """
 
 import sys
@@ -17,7 +17,7 @@ import ollama
 
 from dados_cliente import carregar_tudo, montar_contexto_cliente, montar_system_prompt, solicitar_identificacao
 
-MODEL = "llama3.2:3b"
+MODEL = "llama3.1:8b"
 
 
 def verificar_ollama_disponivel() -> bool:

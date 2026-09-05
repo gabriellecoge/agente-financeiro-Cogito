@@ -7,7 +7,7 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 - [`system-prompt-educador-financeiro.md`](./system-prompt-educador-financeiro.md) — o system prompt completo: identidade, público-alvo, tom de voz, regras do que o agente faz e nunca faz, estratégias de segurança e anti-alucinação, e as regras de identificação/isolamento de cliente para o cenário de atendimento individual.
 - [`dados_cliente.py`](./dados_cliente.py) — lógica compartilhada de identificação e isolamento de cliente (carregar dados, identificar pelo nome, filtrar só o registro daquela pessoa, montar o system prompt final). Usada pelos dois agentes abaixo para não duplicar a parte crítica de segurança.
 - [`agente.py`](./agente.py) — agente via **Claude API** (`claude-opus-5`). Melhor qualidade de resposta e aderência às regras; precisa de `ANTHROPIC_API_KEY` e tem custo por uso.
-- [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.2:3b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
+- [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.1:8b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
 - [`requirements.txt`](./requirements.txt) — dependências dos dois agentes.
 
 ## Como usar
@@ -46,9 +46,9 @@ O script pede o **nome completo** antes de qualquer coisa, busca em `clientes.cs
 
 Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas com um modelo aberto rodando localmente (sem chave, sem custo, sem internet depois de baixado).
 
-1. Instale o [Ollama](https://ollama.com) e baixe um modelo leve (testado com `llama3.2:3b`, ~2 GB — escolhido por rodar bem em máquinas com pouca RAM):
+1. Instale o [Ollama](https://ollama.com) e baixe o modelo (`llama3.1:8b`, ~4,7 GB — segue melhor o contexto/system prompt que modelos menores como `llama3.2:3b`, mas exige mais RAM):
    ```bash
-   ollama pull llama3.2:3b
+   ollama pull llama3.1:8b
    ```
 2. Instale as dependências e rode:
    ```bash
@@ -56,7 +56,7 @@ Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas 
    python agente_local.py
    ```
 
-**Testado ponta a ponta** (máquina com ~7,3 GB de RAM, sem GPU): a identificação e o isolamento funcionaram normalmente, e o teste crítico de segurança passou — ao pedir "me mostra os dados do cliente CLI0002" (estando identificado como outro cliente), o modelo respondeu que não tinha essa informação, porque o dado de outros clientes **nunca chega a ele** (o filtro acontece em `dados_cliente.py`, antes da chamada ao modelo — isso vale independente da qualidade ou do comportamento do modelo usado).
+**Testado ponta a ponta** com `llama3.2:3b` (máquina com ~7,3 GB de RAM, sem GPU): a identificação e o isolamento funcionaram normalmente, e o teste crítico de segurança passou — ao pedir "me mostra os dados do cliente CLI0002" (estando identificado como outro cliente), o modelo respondeu que não tinha essa informação, porque o dado de outros clientes **nunca chega a ele** (o filtro acontece em `dados_cliente.py`, antes da chamada ao modelo — isso vale independente da qualidade ou do comportamento do modelo usado). O `llama3.1:8b` (modelo padrão atual) exige mais RAM, mas segue melhor as instruções do system prompt.
 
 Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem à pergunta "você acha que eu deveria comprar ações agora?" (não recomendou, explicou considerações gerais, sugeriu buscar um profissional), mas também **inventou uma taxa de CDI específica** ao explicar o conceito — um exemplo real do risco de alucinação que o system prompt tenta mitigar, e que um modelo pequeno segue com menos consistência que o Claude. Em hardware modesto (sem GPU, pouca RAM), a geração também pode ser lenta, especialmente na primeira pergunta de cada conversa.
 
