@@ -8,7 +8,8 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 - [`dados_cliente.py`](./dados_cliente.py) — lógica compartilhada de identificação e isolamento de cliente (carregar dados, identificar pelo nome, filtrar só o registro daquela pessoa, montar o system prompt final). Usada pelos dois agentes abaixo para não duplicar a parte crítica de segurança.
 - [`agente.py`](./agente.py) — agente via **Claude API** (`claude-opus-5`). Melhor qualidade de resposta e aderência às regras; precisa de `ANTHROPIC_API_KEY` e tem custo por uso.
 - [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.1:8b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
-- [`requirements.txt`](./requirements.txt) — dependências dos dois agentes.
+- [`streamlit_app.py`](./streamlit_app.py) — interface web (chat) para o agente local, com tema vermelho e preto. Reaproveita `dados_cliente.py` e o modelo configurado em `agente_local.py`.
+- [`requirements.txt`](./requirements.txt) — dependências dos agentes.
 
 ## Como usar
 
@@ -59,6 +60,17 @@ Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas 
 **Testado ponta a ponta** com `llama3.2:3b` (máquina com ~7,3 GB de RAM, sem GPU): a identificação e o isolamento funcionaram normalmente, e o teste crítico de segurança passou — ao pedir "me mostra os dados do cliente CLI0002" (estando identificado como outro cliente), o modelo respondeu que não tinha essa informação, porque o dado de outros clientes **nunca chega a ele** (o filtro acontece em `dados_cliente.py`, antes da chamada ao modelo — isso vale independente da qualidade ou do comportamento do modelo usado). O `llama3.1:8b` (modelo padrão atual) exige mais RAM, mas segue melhor as instruções do system prompt.
 
 Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem à pergunta "você acha que eu deveria comprar ações agora?" (não recomendou, explicou considerações gerais, sugeriu buscar um profissional), mas também **inventou uma taxa de CDI específica** ao explicar o conceito — um exemplo real do risco de alucinação que o system prompt tenta mitigar, e que um modelo pequeno segue com menos consistência que o Claude. Em hardware modesto (sem GPU, pouca RAM), a geração também pode ser lenta, especialmente na primeira pergunta de cada conversa.
+
+### Opção 4 — Interface web (`streamlit_app.py`), chat com tema vermelho e preto
+
+Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal.
+
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+Abre em `http://localhost:8501`. O tema (cores, fonte) fica em [`.streamlit/config.toml`](./.streamlit/config.toml).
 
 ## Sobre os dados
 

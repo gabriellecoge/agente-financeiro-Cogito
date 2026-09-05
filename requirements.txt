@@ -3,3 +3,6 @@ anthropic>=0.91.0
 
 # Opção 2: agente_local.py (Ollama, roda local sem custo de API)
 ollama>=0.6.2
+
+# Opção 3: streamlit_app.py (interface web do agente local via Ollama)
+streamlit>=1.38.0
