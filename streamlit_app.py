@@ -39,23 +39,22 @@ st.markdown(
     html, body, .stApp {
         font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label, .stApp span, .stApp div {
+        color: #0E0E0E;
+    }
     .app-header {
-        background: var(--cogito-dark-alt);
-        padding: 1.5rem 1.75rem;
-        border-radius: 0.75rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--cogito-dark);
+        margin-bottom: 1.75rem;
     }
     .app-header h1 {
         font-family: 'Bodoni Moda', Georgia, serif;
         color: var(--cogito-primary);
-        font-size: 1.9rem;
+        font-size: 2.2rem;
         font-weight: 600;
         margin: 0;
     }
     .app-header p {
         font-family: 'Archivo', sans-serif;
-        color: #C9C3BB;
+        color: var(--cogito-text-secondary);
         margin: 0.35rem 0 0 0;
         font-size: 0.9rem;
     }
