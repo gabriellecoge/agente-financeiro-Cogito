@@ -36,20 +36,24 @@ def carregar_csv(caminho: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def identificar_cliente(nome: str, cliente_id: str, clientes: list[dict]) -> dict | None:
-    """Só confirma a identidade se nome E cliente_id baterem com o mesmo registro.
-
-    Se o cliente_id existir mas o nome não bater (ou vice-versa), retorna None
-    sem indicar qual dos dois campos falhou - evita virar um oráculo de
-    tentativa-e-erro para descobrir dados de outra pessoa.
-    """
-    cliente_id_norm = cliente_id.strip().upper()
+def buscar_por_nome(nome: str, clientes: list[dict]) -> list[dict]:
+    """Retorna todos os registros cujo nome bate com o informado (normalizado)."""
     nome_norm = normalizar(nome)
-    for registro in clientes:
-        if registro["cliente_id"].strip().upper() == cliente_id_norm:
-            if normalizar(registro["nome"]) == nome_norm:
-                return registro
-            return None
+    return [registro for registro in clientes if normalizar(registro["nome"]) == nome_norm]
+
+
+def desambiguar_por_id(candidatos: list[dict]) -> dict | None:
+    """Usada só quando dois ou mais clientes têm o mesmo nome.
+
+    O cliente_id aqui serve apenas para escolher ENTRE os candidatos que já
+    bateram pelo nome - nunca aceita um cliente_id de fora desse grupo, então
+    não dá pra "pular" a etapa do nome só sabendo um ID.
+    """
+    print(f"\nEncontrei {len(candidatos)} clientes com esse nome. Para confirmar, me diga seu cliente_id.")
+    cliente_id = input("cliente_id: ").strip().upper()
+    for candidato in candidatos:
+        if candidato["cliente_id"].strip().upper() == cliente_id:
+            return candidato
     return None
 
 
@@ -84,21 +88,34 @@ por aplicação - não existe acesso a outros `cliente_id` a partir daqui):
 
 
 def solicitar_identificacao(clientes: list[dict]) -> dict:
+    """Identifica o cliente pelo nome completo.
+
+    Caso raro: se o nome bater com mais de um cliente (nomes duplicados na
+    base), pede o cliente_id só para desempatar entre esses candidatos -
+    ver desambiguar_por_id().
+    """
     import sys
 
     print("Antes de começar, preciso confirmar quem está falando comigo.\n")
     for tentativa in range(1, MAX_TENTATIVAS_IDENTIFICACAO + 1):
         nome = input("Nome completo: ").strip()
-        cliente_id = input("cliente_id: ").strip()
-        cliente = identificar_cliente(nome, cliente_id, clientes)
+        candidatos = buscar_por_nome(nome, clientes)
+
+        cliente = None
+        if len(candidatos) == 1:
+            cliente = candidatos[0]
+        elif len(candidatos) > 1:
+            cliente = desambiguar_por_id(candidatos)
+
         if cliente:
             primeiro_nome = cliente["nome"].split()[0]
             print(f"\nIdentificação confirmada. Olá, {primeiro_nome}!\n")
             return cliente
+
         restantes = MAX_TENTATIVAS_IDENTIFICACAO - tentativa
         if restantes > 0:
             print(
-                f"\nNão consegui confirmar esses dados. Confira e tente de novo. "
+                f"\nNão consegui confirmar esse nome. Confira e tente de novo. "
                 f"({restantes} tentativa(s) restante(s))\n"
             )
     print("\nNão foi possível confirmar sua identidade. Encerrando.")
