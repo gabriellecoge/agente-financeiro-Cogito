@@ -87,6 +87,33 @@ por aplicação - não existe acesso a outros `cliente_id` a partir daqui):
     return base + bloco_dados
 
 
+def montar_system_prompt_anonimo(produtos: list[dict]) -> str:
+    """Versão do system prompt sem nenhum dado pessoal de cliente.
+
+    Usada quando a pessoa opta por não se identificar ("Prefiro não dizer"):
+    o agente continua funcionando como educador financeiro geral, só que sem
+    acesso a perfil, histórico ou cadastro de ninguém.
+    """
+    base = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    bloco_dados = f"""
+
+## Sem cliente identificado nesta conversa
+
+A pessoa optou por não se identificar. Não há registro de cliente disponível
+- responda de forma genérica, sem supor perfil, objetivos ou histórico. Se a
+pergunta depender de dados pessoais (ex.: "isso serve pro meu perfil?"),
+explique que precisaria da identificação para personalizar, mas continue
+ajudando com a explicação geral.
+
+## Catálogo de produtos financeiros (referência pública)
+
+```json
+{json.dumps(produtos, ensure_ascii=False, indent=2)}
+```
+"""
+    return base + bloco_dados
+
+
 def solicitar_identificacao(clientes: list[dict]) -> dict:
     """Identifica o cliente pelo nome completo.
 

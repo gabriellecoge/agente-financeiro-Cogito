@@ -8,7 +8,8 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 - [`dados_cliente.py`](./dados_cliente.py) — lógica compartilhada de identificação e isolamento de cliente (carregar dados, identificar pelo nome, filtrar só o registro daquela pessoa, montar o system prompt final). Usada pelos dois agentes abaixo para não duplicar a parte crítica de segurança.
 - [`agente.py`](./agente.py) — agente via **Claude API** (`claude-opus-5`). Melhor qualidade de resposta e aderência às regras; precisa de `ANTHROPIC_API_KEY` e tem custo por uso.
 - [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.1:8b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
-- [`streamlit_app.py`](./streamlit_app.py) — interface web (chat) para o agente local, com tema vermelho e preto. Reaproveita `dados_cliente.py` e o modelo configurado em `agente_local.py`.
+- [`streamlit_app.py`](./streamlit_app.py) — interface web (chat) para o agente local, com a identidade visual "Cogito, Financeiro" (editorial, arestas retas, vermelho só como acento). Reaproveita `dados_cliente.py` e o modelo configurado em `agente_local.py`.
+- [`assets/avatar_cogito.png`](./assets/avatar_cogito.png) — avatar do assistente no chat (quadrado preto com a vírgula vermelha), gerado a partir da fonte Bodoni Moda.
 - [`requirements.txt`](./requirements.txt) — dependências dos agentes.
 
 ## Como usar
@@ -63,7 +64,7 @@ Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem
 
 ### Opção 4 — Interface web (`streamlit_app.py`), marca "Cogito, Financeiro"
 
-Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento, título em Bodoni Moda e corpo em Archivo.
+Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento (no máximo três lugares por tela), cinza só para estado desabilitado, sem cantos arredondados, título em Bodoni Moda e corpo em Archivo.
 
 ```bash
 pip install -r requirements.txt
@@ -71,6 +72,14 @@ streamlit run streamlit_app.py
 ```
 
 Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit/config.toml`](./.streamlit/config.toml); a tipografia e os detalhes visuais do cabeçalho/chat ficam no bloco de CSS no topo de [`streamlit_app.py`](./streamlit_app.py).
+
+Funcionalidades da interface:
+
+- **Identificação por nome** com estado de erro discreto (texto vermelho fino, sem caixa de alerta) e opção **"Prefiro não dizer"** — entra num modo genérico de educação financeira, sem nenhum dado pessoal de cliente carregado.
+- **Respostas rápidas em botão** na primeira mensagem do assistente, para reduzir o quanto a pessoa precisa digitar de início.
+- **Indicador "Cogito está pensando..."** enquanto o modelo gera a resposta.
+- **Avatar do assistente** (quadrado preto com a vírgula vermelha) ao lado de cada fala dele; a fala do usuário é um bloco preto sólido alinhado à direita, sem avatar.
+- Rodapé com a tagline "Penso, logo prospero." e indicador de etapa na tela de identificação.
 
 ## Sobre os dados
 

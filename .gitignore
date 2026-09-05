@@ -11,5 +11,6 @@ __pycache__/
 # Config local de preview (Claude Code) - não faz parte do projeto
 .claude/
 
-# Canvas de design (arquivo grande, exportado à parte)
+# Canvas de design (arquivos grandes, exportados à parte)
 cogito-financeiro.html
+assistente-cogito.html
