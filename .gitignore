@@ -1,3 +1,9 @@
 # Arquivos de dados (contêm dados pessoais fictícios de clientes) — não versionar
 *.csv
 *.json
+
+# Ambiente Python
+__pycache__/
+*.pyc
+.venv/
+.env
