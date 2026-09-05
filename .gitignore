@@ -1,0 +1,3 @@
+# Arquivos de dados (contêm dados pessoais fictícios de clientes) — não versionar
+*.csv
+*.json
