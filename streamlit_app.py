@@ -27,6 +27,7 @@ from dados_cliente import (
     montar_contexto_cliente,
     montar_system_prompt,
     montar_system_prompt_anonimo,
+    montar_system_prompt_novo_cliente,
 )
 
 AVATAR_ASSISTENTE = str(Path(__file__).parent / "assets" / "avatar_cogito.png")
@@ -38,6 +39,64 @@ RESPOSTAS_RAPIDAS = [
 ]
 
 MENSAGEM_ABERTURA = "Vamos começar pelo que pesa mais. O que mais te tira o sono hoje?"
+
+NAO_INFORMADO = "Não informado"
+
+FAIXAS_PATRIMONIO = [
+    NAO_INFORMADO,
+    "Até R$ 10 mil",
+    "R$ 10 mil a R$ 50 mil",
+    "R$ 50 mil a R$ 200 mil",
+    "R$ 200 mil a R$ 500 mil",
+    "Acima de R$ 500 mil",
+]
+
+FAIXAS_RENDA = [
+    NAO_INFORMADO,
+    "Até R$ 2 mil",
+    "R$ 2 mil a R$ 5 mil",
+    "R$ 5 mil a R$ 10 mil",
+    "R$ 10 mil a R$ 20 mil",
+    "Acima de R$ 20 mil",
+]
+
+OPCOES_INVESTIMENTO_ATUAL = [
+    "Poupança",
+    "CDB",
+    "Tesouro Direto",
+    "Fundo Imobiliário",
+    "Fundo Multimercado",
+    "Ações",
+    "LCI/LCA",
+    "Previdência Privada",
+    "Ainda não invisto",
+]
+
+OBJETIVOS = [
+    NAO_INFORMADO,
+    "Aposentadoria",
+    "Reserva de Emergência",
+    "Compra de Imóvel",
+    "Educação dos Filhos",
+    "Crescimento de Patrimônio",
+    "Independência Financeira",
+    "Viagem",
+    "Outro",
+]
+
+HORIZONTES = [
+    NAO_INFORMADO,
+    "Curto Prazo (até 1 ano)",
+    "Médio Prazo (1 a 5 anos)",
+    "Longo Prazo (acima de 5 anos)",
+]
+
+PERFIS_RISCO = [
+    NAO_INFORMADO,
+    "Conservador — prefiro segurança, mesmo com retorno menor",
+    "Moderado — topo algum risco por um retorno melhor",
+    "Arrojado — busco retorno maior e aceito oscilar bastante",
+]
 
 st.set_page_config(page_title="Cogito, Financeiro", page_icon="🤖", layout="centered")
 
@@ -247,6 +306,26 @@ st.markdown(
     [data-testid="stChatInput"] textarea {
         caret-color: var(--cogito-primary) !important;
     }
+    [data-baseweb="select"] > div {
+        border-radius: 0 !important;
+        border-color: var(--cogito-border) !important;
+    }
+    [data-baseweb="select"]:focus-within > div {
+        border-color: var(--cogito-black) !important;
+        box-shadow: 3px 3px 0 0 var(--cogito-black) !important;
+    }
+    [data-baseweb="tag"] {
+        border-radius: 0 !important;
+        background: var(--cogito-black) !important;
+    }
+    .cogito-step-title {
+        font-family: 'Bodoni Moda', Georgia, serif;
+        color: var(--cogito-black) !important;
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1.25;
+        margin: 0 0 0.4rem 0;
+    }
     [data-testid="stChatMessageAvatarUser"] {
         display: none !important;
     }
@@ -331,6 +410,12 @@ if "mostrar_respostas_rapidas" not in st.session_state:
     st.session_state.mostrar_respostas_rapidas = False
 if "pergunta_pendente" not in st.session_state:
     st.session_state.pergunta_pendente = None
+if "etapa" not in st.session_state:
+    st.session_state.etapa = 1
+if "nome_em_progresso" not in st.session_state:
+    st.session_state.nome_em_progresso = None
+if "perfil_autodeclarado" not in st.session_state:
+    st.session_state.perfil_autodeclarado = None
 
 
 def render_header():
@@ -385,6 +470,29 @@ def confirmar_anonimo() -> None:
     st.rerun()
 
 
+def confirmar_novo_cliente() -> None:
+    nome = st.session_state.nome_em_progresso
+    st.session_state.cliente = {"nome": nome, "cliente_id": None}
+    st.session_state.anonimo = False
+    st.session_state.system_prompt = montar_system_prompt_novo_cliente(
+        nome, st.session_state.perfil_autodeclarado, produtos
+    )
+    iniciar_conversa()
+    st.rerun()
+
+
+def render_footer(etapa: int) -> None:
+    st.markdown(
+        f"""
+        <div class="cogito-footer">
+        <span class="tag">Penso, logo prospero.</span>
+        <span class="step">Etapa {etapa} de 3</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def tela_identificacao() -> None:
     render_header()
     st.markdown('<div class="cogito-lead-mark">,</div>', unsafe_allow_html=True)
@@ -407,15 +515,24 @@ def tela_identificacao() -> None:
         confirmar_anonimo()
 
     if enviado:
-        candidatos = buscar_por_nome(nome.strip(), clientes) if nome.strip() else []
-        if len(candidatos) == 1:
-            confirmar_cliente(candidatos[0])
-        elif len(candidatos) > 1:
-            st.session_state.candidatos = candidatos
-            st.session_state.erro_identificacao = None
+        nome_limpo = nome.strip()
+        if not nome_limpo:
+            st.session_state.erro_identificacao = "Digite um nome para continuar."
         else:
-            st.session_state.candidatos = None
-            st.session_state.erro_identificacao = "Não consegui confirmar esse nome. Confira e tente de novo."
+            candidatos = buscar_por_nome(nome_limpo, clientes)
+            if len(candidatos) == 1:
+                confirmar_cliente(candidatos[0])
+            elif len(candidatos) > 1:
+                st.session_state.candidatos = candidatos
+                st.session_state.erro_identificacao = None
+            else:
+                # Nome não encontrado na base - não é erro, é gente nova.
+                # Segue para a coleta de perfil (etapas 2 e 3) em vez de travar aqui.
+                st.session_state.nome_em_progresso = nome_limpo
+                st.session_state.perfil_autodeclarado = {}
+                st.session_state.erro_identificacao = None
+                st.session_state.etapa = 2
+                st.rerun()
 
     if st.session_state.erro_identificacao:
         st.markdown(
@@ -443,15 +560,123 @@ def tela_identificacao() -> None:
             else:
                 st.error("Esse cliente_id não corresponde a nenhum dos clientes encontrados com esse nome.")
 
+    render_footer(1)
+
+
+def tela_situacao_financeira() -> None:
+    render_header()
+    primeiro_nome = st.session_state.nome_em_progresso.split()[0]
     st.markdown(
-        """
-        <div class="cogito-footer">
-        <span class="tag">Penso, logo prospero.</span>
-        <span class="step">Etapa 1 de 3</span>
-        </div>
-        """,
+        f'<p class="cogito-step-title">Show, {primeiro_nome}. Me conta um pouco<br>da sua situação hoje.</p>',
         unsafe_allow_html=True,
     )
+    st.markdown(
+        '<p class="cogito-subtext">Faixas aproximadas bastam - isso fica só nesta conversa, não é salvo em '
+        "nenhum lugar.</p>",
+        unsafe_allow_html=True,
+    )
+
+    with st.form("form_situacao_financeira", border=False):
+        st.markdown('<div class="cogito-field-label">Patrimônio total aproximado</div>', unsafe_allow_html=True)
+        patrimonio = st.selectbox("Patrimônio total aproximado", FAIXAS_PATRIMONIO, label_visibility="collapsed")
+        st.markdown('<div class="cogito-field-label">Renda mensal aproximada</div>', unsafe_allow_html=True)
+        renda = st.selectbox("Renda mensal aproximada", FAIXAS_RENDA, label_visibility="collapsed")
+        st.markdown('<div class="cogito-field-label">Já investe em algo hoje?</div>', unsafe_allow_html=True)
+        investimentos = st.multiselect(
+            "Já investe em algo hoje?",
+            OPCOES_INVESTIMENTO_ATUAL,
+            label_visibility="collapsed",
+            placeholder="Selecione uma ou mais opções",
+        )
+        col_voltar, col_pular, col_continuar = st.columns([1, 1, 1])
+        with col_voltar:
+            voltar = st.form_submit_button("← Voltar", type="secondary", use_container_width=True)
+        with col_pular:
+            pular = st.form_submit_button("Prefiro não dizer", type="secondary", use_container_width=True)
+        with col_continuar:
+            enviado = st.form_submit_button("Continuar →", type="primary", use_container_width=True)
+
+    if voltar:
+        st.session_state.etapa = 1
+        st.rerun()
+
+    if pular:
+        st.session_state.perfil_autodeclarado.update(
+            {
+                "patrimonio_total_aproximado": NAO_INFORMADO,
+                "renda_mensal_aproximada": NAO_INFORMADO,
+                "investimentos_atuais": NAO_INFORMADO,
+            }
+        )
+        st.session_state.etapa = 3
+        st.rerun()
+
+    if enviado:
+        st.session_state.perfil_autodeclarado.update(
+            {
+                "patrimonio_total_aproximado": patrimonio,
+                "renda_mensal_aproximada": renda,
+                "investimentos_atuais": investimentos if investimentos else NAO_INFORMADO,
+            }
+        )
+        st.session_state.etapa = 3
+        st.rerun()
+
+    render_footer(2)
+
+
+def tela_objetivo_perfil() -> None:
+    render_header()
+    st.markdown(
+        '<p class="cogito-step-title">Só mais duas coisas antes<br>da gente conversar de verdade.</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="cogito-subtext">Isso ajuda a explicar as coisas do jeito certo para você - não muda '
+        "o que eu recomendo, porque eu não recomendo produtos.</p>",
+        unsafe_allow_html=True,
+    )
+
+    with st.form("form_objetivo_perfil", border=False):
+        st.markdown('<div class="cogito-field-label">Objetivo principal</div>', unsafe_allow_html=True)
+        objetivo = st.selectbox("Objetivo principal", OBJETIVOS, label_visibility="collapsed")
+        st.markdown('<div class="cogito-field-label">Horizonte</div>', unsafe_allow_html=True)
+        horizonte = st.selectbox("Horizonte", HORIZONTES, label_visibility="collapsed")
+        st.markdown('<div class="cogito-field-label">Como você reage a risco?</div>', unsafe_allow_html=True)
+        perfil_risco = st.selectbox("Como você reage a risco?", PERFIS_RISCO, label_visibility="collapsed")
+        col_voltar, col_pular, col_continuar = st.columns([1, 1, 1])
+        with col_voltar:
+            voltar = st.form_submit_button("← Voltar", type="secondary", use_container_width=True)
+        with col_pular:
+            pular = st.form_submit_button("Prefiro não dizer", type="secondary", use_container_width=True)
+        with col_continuar:
+            enviado = st.form_submit_button("Começar a conversar →", type="primary", use_container_width=True)
+
+    if voltar:
+        st.session_state.etapa = 2
+        st.rerun()
+
+    if pular:
+        st.session_state.perfil_autodeclarado.update(
+            {
+                "objetivo_principal": NAO_INFORMADO,
+                "horizonte_investimento": NAO_INFORMADO,
+                "perfil_risco_autoavaliado": NAO_INFORMADO,
+            }
+        )
+        confirmar_novo_cliente()
+
+    if enviado:
+        st.session_state.perfil_autodeclarado.update(
+            {
+                "objetivo_principal": objetivo,
+                "horizonte_investimento": horizonte,
+                "perfil_risco_autoavaliado": perfil_risco,
+            }
+        )
+        confirmar_novo_cliente()
+
+    render_footer(3)
 
 
 def enviar_mensagem(texto: str) -> None:
@@ -459,6 +684,11 @@ def enviar_mensagem(texto: str) -> None:
     st.session_state.mostrar_respostas_rapidas = False
     st.session_state.pergunta_pendente = texto
     st.rerun()
+
+
+def escapar_dolar(texto: str) -> str:
+    """Evita que o markdown do Streamlit leia "R$ X ... R$ Y" como delimitador de LaTeX."""
+    return texto.replace("$", "\\$")
 
 
 def gerar_resposta() -> None:
@@ -478,8 +708,8 @@ def gerar_resposta() -> None:
             for chunk in ollama.chat(model=MODEL, messages=mensagens_modelo, stream=True):
                 pedaco = chunk["message"]["content"]
                 resposta_completa += pedaco
-                placeholder.markdown(resposta_completa + "▌")
-            placeholder.markdown(resposta_completa)
+                placeholder.markdown(escapar_dolar(resposta_completa) + "▌")
+            placeholder.markdown(escapar_dolar(resposta_completa))
         except ollama.ResponseError as e:
             resposta_completa = f"Erro do Ollama: {e.error}"
             placeholder.error(resposta_completa)
@@ -496,7 +726,7 @@ def tela_conversa() -> None:
     for mensagem in st.session_state.mensagens:
         avatar = AVATAR_ASSISTENTE if mensagem["role"] == "assistant" else None
         with st.chat_message(mensagem["role"], avatar=avatar):
-            st.markdown(mensagem["content"])
+            st.markdown(escapar_dolar(mensagem["content"]))
 
     if st.session_state.mostrar_respostas_rapidas and not st.session_state.pergunta_pendente:
         cols = st.columns(len(RESPOSTAS_RAPIDAS))
@@ -516,8 +746,15 @@ def tela_conversa() -> None:
     with st.sidebar:
         nome_exibicao = st.session_state.cliente["nome"]
         st.markdown(f"### {nome_exibicao}")
-        if not st.session_state.anonimo:
+        if st.session_state.cliente["cliente_id"]:
             st.caption(f"cliente_id: {st.session_state.cliente['cliente_id']}")
+        elif st.session_state.perfil_autodeclarado:
+            st.caption("Cliente novo - dados autodeclarados nesta sessão (não salvos):")
+            for chave, valor in st.session_state.perfil_autodeclarado.items():
+                valor_exibido = ", ".join(valor) if isinstance(valor, list) else valor
+                # Escapa "$" - dois "R$" na mesma legenda seriam lidos como LaTeX pelo markdown do Streamlit.
+                valor_escapado = str(valor_exibido).replace("$", "\\$")
+                st.caption(f"• {chave.replace('_', ' ')}: {valor_escapado}")
         st.caption(f"Modelo local: {MODEL}")
         if st.button("Trocar de cliente", type="secondary"):
             st.session_state.cliente = None
@@ -525,10 +762,17 @@ def tela_conversa() -> None:
             st.session_state.mensagens = []
             st.session_state.mostrar_respostas_rapidas = False
             st.session_state.pergunta_pendente = None
+            st.session_state.etapa = 1
+            st.session_state.nome_em_progresso = None
+            st.session_state.perfil_autodeclarado = None
             st.rerun()
 
 
-if st.session_state.cliente is None:
-    tela_identificacao()
-else:
+if st.session_state.cliente is not None:
     tela_conversa()
+elif st.session_state.etapa == 2:
+    tela_situacao_financeira()
+elif st.session_state.etapa == 3:
+    tela_objetivo_perfil()
+else:
+    tela_identificacao()

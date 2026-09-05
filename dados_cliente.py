@@ -114,6 +114,44 @@ ajudando com a explicação geral.
     return base + bloco_dados
 
 
+def montar_system_prompt_novo_cliente(nome: str, perfil_autodeclarado: dict, produtos: list[dict]) -> str:
+    """Versão do system prompt para gente que não está na base (cliente novo).
+
+    Os dados vêm de perguntas feitas na própria conversa (faixas de
+    patrimônio/renda, objetivo, perfil de risco) - existem só durante a
+    sessão, não são salvos em nenhum arquivo. São marcados explicitamente
+    como autodeclarados e não verificados, para o agente não tratar faixas
+    aproximadas como números exatos e auditados como os da base oficial.
+    """
+    base = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    dados = {"nome": nome, **perfil_autodeclarado}
+    bloco_dados = f"""
+
+## Cliente novo (não está na base oficial) - dados autodeclarados nesta conversa
+
+Esta pessoa não tem cadastro na base de clientes. As informações abaixo
+foram fornecidas por ela mesma no início desta conversa (faixas aproximadas,
+não valores exatos) e existem só nesta sessão - não foram salvas em nenhum
+arquivo nem verificadas. Trate como direcional, não como dado auditado:
+
+```json
+{json.dumps(dados, ensure_ascii=False, indent=2)}
+```
+
+Use isso só para calibrar a explicação (igual vale para clientes da base
+oficial - ver seção "Como usar perfil + produtos juntos" acima). Campos
+marcados como "Não informado" significam que a pessoa preferiu não
+responder - não insista, não pressuponha.
+
+## Catálogo de produtos financeiros (referência pública)
+
+```json
+{json.dumps(produtos, ensure_ascii=False, indent=2)}
+```
+"""
+    return base + bloco_dados
+
+
 def solicitar_identificacao(clientes: list[dict]) -> dict:
     """Identifica o cliente pelo nome completo.
 

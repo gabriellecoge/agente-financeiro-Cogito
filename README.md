@@ -75,11 +75,17 @@ Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit
 
 Funcionalidades da interface:
 
-- **Identificação por nome** com estado de erro discreto (texto vermelho fino, sem caixa de alerta) e opção **"Prefiro não dizer"** — entra num modo genérico de educação financeira, sem nenhum dado pessoal de cliente carregado.
+- **Identificação por nome**, com três desfechos possíveis:
+  1. Nome bate com um cliente da base oficial → usa os dados reais dele (Opção 2/3).
+  2. Nome bate com **mais de um** cliente → pede `cliente_id` para desempatar.
+  3. Nome **não está na base** → não é tratado como erro. A pessoa segue para duas telas curtas (Etapa 2 de 3 e Etapa 3 de 3) onde informa, por faixas aproximadas, patrimônio, renda, investimentos atuais, objetivo e perfil de risco. Esses dados existem **só durante a sessão do navegador** - não são salvos em nenhum arquivo - e são injetados no system prompt marcados como "autodeclarados, não verificados" (`dados_cliente.montar_system_prompt_novo_cliente`). Qualquer campo pode ser pulado com "Prefiro não dizer" (vira "Não informado").
+  4. **"Prefiro não dizer"** já na etapa 1 pula tudo isso e entra num modo genérico, sem nome nem perfil.
+- Em todos os casos, a regra de **nunca recomendar** (só explicar, calibrando pelo perfil) continua valendo — ela está no system prompt base, não muda conforme a origem dos dados.
 - **Respostas rápidas em botão** na primeira mensagem do assistente, para reduzir o quanto a pessoa precisa digitar de início.
 - **Indicador "Cogito está pensando..."** enquanto o modelo gera a resposta.
 - **Avatar do assistente** (quadrado preto com a vírgula vermelha) ao lado de cada fala dele; a fala do usuário é um bloco preto sólido alinhado à direita, sem avatar.
-- Rodapé com a tagline "Penso, logo prospero." e indicador de etapa na tela de identificação.
+- Rodapé com a tagline "Penso, logo prospero." e indicador de etapa (1/2/3) nas telas de identificação e coleta de perfil.
+- Barra lateral mostra o que o agente "sabe" sobre a pessoa (cadastro oficial ou perfil autodeclarado), para transparência.
 
 ## Sobre os dados
 
