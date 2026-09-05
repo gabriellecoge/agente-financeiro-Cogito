@@ -2,9 +2,10 @@
 
 Reaproveita a identificação/isolamento de dados_cliente.py e o modelo
 configurado em agente_local.py (Ollama, sem custo de API). A lógica de
-identificação aqui é uma adaptação da de dados_cliente.solicitar_identificacao
-para formulários web em vez de input() de terminal - as regras de isolamento
-(nome + cliente_id no mesmo registro) são as mesmas.
+identificação aqui é uma adaptação de dados_cliente.solicitar_identificacao
+para formulários web em vez de input() de terminal: identifica pelo nome
+completo e só pede cliente_id para desempatar quando há mais de um cliente
+com o mesmo nome - as mesmas regras de isolamento de dados_cliente.py.
 """
 
 import ollama
@@ -13,30 +14,54 @@ import streamlit as st
 from agente_local import MODEL, verificar_ollama_disponivel
 from dados_cliente import buscar_por_nome, carregar_tudo, montar_contexto_cliente, montar_system_prompt
 
-st.set_page_config(page_title="Educador Financeiro", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="Cogito, Financeiro", page_icon="🤖", layout="centered")
 
+# Paleta e tipografia adaptadas do sistema de marca "Cogito Financeiro":
+# vermelho carmim só como acento pontual, nunca como fundo dominante -
+# o fundo predominante é o creme, com texto quase-preto e cinzas quentes.
 st.markdown(
     """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet">
     <style>
+    :root {
+        --cogito-primary: #B21229;
+        --cogito-primary-hover: #E0203A;
+        --cogito-primary-pressed: #6E0A18;
+        --cogito-dark: #0E0E0E;
+        --cogito-dark-alt: #1C1A17;
+        --cogito-cream: #F3EFE9;
+        --cogito-cream-alt: #E7E2DA;
+        --cogito-border: #D6D0C7;
+        --cogito-text-secondary: #6E6A64;
+    }
+    html, body, .stApp {
+        font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
     .app-header {
-        background: linear-gradient(135deg, #E4002B 0%, #7A0019 100%);
-        padding: 1.25rem 1.5rem;
+        background: var(--cogito-dark-alt);
+        padding: 1.5rem 1.75rem;
         border-radius: 0.75rem;
         margin-bottom: 1.5rem;
+        border: 1px solid var(--cogito-dark);
     }
     .app-header h1 {
-        color: #FFFFFF;
-        font-size: 1.5rem;
+        font-family: 'Bodoni Moda', Georgia, serif;
+        color: var(--cogito-primary);
+        font-size: 1.9rem;
+        font-weight: 600;
         margin: 0;
     }
     .app-header p {
-        color: #F2D9DD;
-        margin: 0.25rem 0 0 0;
+        font-family: 'Archivo', sans-serif;
+        color: #C9C3BB;
+        margin: 0.35rem 0 0 0;
         font-size: 0.9rem;
     }
     [data-testid="stChatMessage"] {
-        background-color: #1C1C1C;
-        border-left: 3px solid #E4002B;
+        background-color: #FFFFFF;
+        border-left: 3px solid var(--cogito-primary);
         border-radius: 0.5rem;
         padding: 0.5rem 0.75rem;
     }
@@ -48,8 +73,8 @@ st.markdown(
 st.markdown(
     """
     <div class="app-header">
-        <h1>🤖 Educador Financeiro</h1>
-        <p>Assistente virtual de educação financeira - modelo local via Ollama, sem custo de API.</p>
+        <h1>Cogito, Financeiro</h1>
+        <p>Cogito, seu assistente virtual - Penso, logo prospero!</p>
     </div>
     """,
     unsafe_allow_html=True,

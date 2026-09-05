@@ -61,16 +61,16 @@ Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas 
 
 Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem à pergunta "você acha que eu deveria comprar ações agora?" (não recomendou, explicou considerações gerais, sugeriu buscar um profissional), mas também **inventou uma taxa de CDI específica** ao explicar o conceito — um exemplo real do risco de alucinação que o system prompt tenta mitigar, e que um modelo pequeno segue com menos consistência que o Claude. Em hardware modesto (sem GPU, pouca RAM), a geração também pode ser lenta, especialmente na primeira pergunta de cada conversa.
 
-### Opção 4 — Interface web (`streamlit_app.py`), chat com tema vermelho e preto
+### Opção 4 — Interface web (`streamlit_app.py`), marca "Cogito, Financeiro"
 
-Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal.
+Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento, título em Bodoni Moda e corpo em Archivo.
 
 ```bash
 pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Abre em `http://localhost:8501`. O tema (cores, fonte) fica em [`.streamlit/config.toml`](./.streamlit/config.toml).
+Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit/config.toml`](./.streamlit/config.toml); a tipografia e os detalhes visuais do cabeçalho/chat ficam no bloco de CSS no topo de [`streamlit_app.py`](./streamlit_app.py).
 
 ## Sobre os dados
 
