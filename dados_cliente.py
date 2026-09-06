@@ -69,19 +69,22 @@ def montar_system_prompt(cliente: dict, contexto_cliente: dict, produtos: list[d
     dados_cliente = {"cadastro": cliente, **contexto_cliente}
     bloco_dados = f"""
 
-## Registro do cliente identificado nesta conversa
-
-Estes são os ÚNICOS dados de cliente disponíveis nesta conversa (já filtrados
-por aplicação - não existe acesso a outros `cliente_id` a partir daqui):
-
-```json
-{json.dumps(dados_cliente, ensure_ascii=False, indent=2)}
-```
-
 ## Catálogo de produtos financeiros (referência pública)
 
 ```json
-{json.dumps(produtos, ensure_ascii=False, indent=2)}
+{json.dumps(produtos, ensure_ascii=False, separators=(",", ":"))}
+```
+
+## Registro do cliente identificado nesta conversa
+
+Estes são os ÚNICOS dados de cliente disponíveis nesta conversa (já filtrados
+por aplicação - não existe acesso a outros `cliente_id` a partir daqui). Este
+bloco vem por último de propósito: se o contexto do modelo estourar por
+qualquer motivo, é o catálogo de produtos (genérico) que deve ser cortado
+primeiro, nunca o registro desta pessoa.
+
+```json
+{json.dumps(dados_cliente, ensure_ascii=False, separators=(",", ":"))}
 ```
 """
     return base + bloco_dados
@@ -108,7 +111,7 @@ ajudando com a explicação geral.
 ## Catálogo de produtos financeiros (referência pública)
 
 ```json
-{json.dumps(produtos, ensure_ascii=False, indent=2)}
+{json.dumps(produtos, ensure_ascii=False, separators=(",", ":"))}
 ```
 """
     return base + bloco_dados
@@ -127,27 +130,30 @@ def montar_system_prompt_novo_cliente(nome: str, perfil_autodeclarado: dict, pro
     dados = {"nome": nome, **perfil_autodeclarado}
     bloco_dados = f"""
 
+## Catálogo de produtos financeiros (referência pública)
+
+```json
+{json.dumps(produtos, ensure_ascii=False, separators=(",", ":"))}
+```
+
 ## Cliente novo (não está na base oficial) - dados autodeclarados nesta conversa
 
 Esta pessoa não tem cadastro na base de clientes. As informações abaixo
 foram fornecidas por ela mesma no início desta conversa (faixas aproximadas,
 não valores exatos) e existem só nesta sessão - não foram salvas em nenhum
-arquivo nem verificadas. Trate como direcional, não como dado auditado:
+arquivo nem verificadas. Trate como direcional, não como dado auditado. Este
+bloco vem por último de propósito: se o contexto do modelo estourar por
+qualquer motivo, é o catálogo de produtos (genérico) que deve ser cortado
+primeiro, nunca o perfil desta pessoa.
 
 ```json
-{json.dumps(dados, ensure_ascii=False, indent=2)}
+{json.dumps(dados, ensure_ascii=False, separators=(",", ":"))}
 ```
 
 Use isso só para calibrar a explicação (igual vale para clientes da base
 oficial - ver seção "Como usar perfil + produtos juntos" acima). Campos
 marcados como "Não informado" significam que a pessoa preferiu não
 responder - não insista, não pressuponha.
-
-## Catálogo de produtos financeiros (referência pública)
-
-```json
-{json.dumps(produtos, ensure_ascii=False, indent=2)}
-```
 """
     return base + bloco_dados
 

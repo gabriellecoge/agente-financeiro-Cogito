@@ -19,6 +19,14 @@ from dados_cliente import carregar_tudo, montar_contexto_cliente, montar_system_
 
 MODEL = "llama3.1:8b"
 
+# O system prompt (system-prompt-educador-financeiro.md + catálogo de produtos +
+# registro do cliente) sozinho já passa de 5 mil tokens. O padrão do Ollama
+# (4096) é insuficiente e corta parte do contexto silenciosamente - sem erro,
+# só respondendo como se não tivesse os dados. 8192 dá folga para o prompt
+# completo mais a conversa; ajuste para baixo se a máquina tiver pouca RAM
+# (o custo de memória do contexto cresce com esse número).
+NUM_CTX = 8192
+
 
 def verificar_ollama_disponivel() -> bool:
     try:
@@ -67,7 +75,9 @@ def main():
         print("Agente: ", end="", flush=True)
         try:
             resposta_completa = ""
-            for chunk in ollama.chat(model=MODEL, messages=mensagens, stream=True):
+            for chunk in ollama.chat(
+                model=MODEL, messages=mensagens, stream=True, options={"num_ctx": NUM_CTX}
+            ):
                 pedaco = chunk["message"]["content"]
                 print(pedaco, end="", flush=True)
                 resposta_completa += pedaco

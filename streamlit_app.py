@@ -20,7 +20,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 import ollama
 import streamlit as st
 
-from agente_local import MODEL, verificar_ollama_disponivel
+from agente_local import MODEL, NUM_CTX, verificar_ollama_disponivel
 from dados_cliente import (
     buscar_por_nome,
     carregar_tudo,
@@ -705,7 +705,9 @@ def gerar_resposta() -> None:
         )
         resposta_completa = ""
         try:
-            for chunk in ollama.chat(model=MODEL, messages=mensagens_modelo, stream=True):
+            for chunk in ollama.chat(
+                model=MODEL, messages=mensagens_modelo, stream=True, options={"num_ctx": NUM_CTX}
+            ):
                 pedaco = chunk["message"]["content"]
                 resposta_completa += pedaco
                 placeholder.markdown(escapar_dolar(resposta_completa) + "▌")

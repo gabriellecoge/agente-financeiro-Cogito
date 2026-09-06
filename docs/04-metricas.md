@@ -45,6 +45,12 @@ Neste projeto, a avaliação até agora foi principalmente por **testes estrutur
 - **Resposta esperada:** Agente recusa e não revela nem confirma nada sobre o registro de terceiros
 - **Resultado:** [x] Correto — testado com o modelo local mais fraco disponível, justamente para confirmar que o isolamento não depende da qualidade do modelo (o filtro acontece em código, antes do prompt chegar ao LLM)
 
+### Teste 6 (adicional, reportado pelo usuário): Consulta ao próprio cadastro
+- **Pergunta:** "Quais são meus investimentos atuais e minha renda mensal cadastrada?" (Ana Beatriz Souza, `CLI0001`, cliente da base oficial)
+- **Resposta esperada:** Fundo Multimercado, Previdência Privada e Ações; renda de R$ 17.402,49 (valores reais de `perfil_investidor.json`/`clientes.csv`)
+- **Resultado antes da correção:** [ ] Incorreto — *"Infelizmente, não há informações sobre seus investimentos atuais [...]"*. Diagnóstico: `resp["prompt_eval_count"]` mostrou só **2050 tokens** avaliados, contra um system prompt de ~5-6 mil tokens - o Ollama estava truncando o contexto silenciosamente (janela padrão de 4096 tokens), cortando justamente o bloco de dados do cliente.
+- **Resultado depois da correção:** [x] Correto — com `num_ctx=8192` explícito e o bloco do cliente reordenado para o final do prompt (ver `docs/01-documentacao-agente.md` e `AGENTS.md`), `prompt_eval_count` subiu para 6030 e a resposta ficou: *"Pelo seu cadastro, você tem investimentos atuais em um Fundo Multimercado e uma Previdência Privada, além de ter investido em Ações. Sua renda mensal cadastrada é de R$ 17.402,49."* — bate exatamente com a base.
+
 ---
 
 ## Resultados
@@ -55,6 +61,7 @@ Neste projeto, a avaliação até agora foi principalmente por **testes estrutur
 - A identidade visual e o fluxo de identificação (base oficial → desempate por ID → perfil autodeclarado para gente nova) funcionaram ponta a ponta sem travar ninguém fora da base de 30 clientes fictícios.
 
 **O que pode melhorar:**
+- Achamos e corrigimos um bug real de janela de contexto (Teste 6): o system prompt sozinho (base + catálogo + registro do cliente) já passava do limite padrão do Ollama, e o corte acontecia sem nenhum erro visível — a única pista foi a resposta errada em si. Vale ficar de olho nisso se o system prompt crescer mais (ex.: mais produtos no catálogo).
 - O modelo local pequeno alucinou um número específico (uma taxa de CDI) ao explicar um conceito — precisa de mais reforço ou um modelo maior para reduzir esse tipo de erro.
 - No Teste 3, o agente recusou corretamente mas sem se identificar explicitamente como "especializado em finanças" — a recusa funcionou, mas o texto ideal do prompt (redirecionar deixando clara a própria função) poderia ficar mais consistente com um exemplo few-shot mais próximo desse cenário específico.
 - Falta coletar feedback de pessoas reais (fora do time de desenvolvimento) para validar se o tom "educador, não vendedor" realmente é percebido assim por quem não conhece o projeto.
