@@ -1,4 +1,4 @@
-# Agente Financeiro — Educador Financeiro
+# Agente Financeiro — Cogito, Financeiro
 
 Protótipo de uma assistente virtual de **educação financeira** — não de consultoria de investimentos. O objetivo não é dar respostas prontas nem recomendar produtos, e sim ajudar pessoas iniciantes ou intermediárias (autônomos, MEIs, pequenos empresários, curiosos no assunto) a entender como o mercado financeiro funciona, para que tomem as próprias decisões com mais autonomia e confiança.
 
@@ -14,26 +14,8 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 
 ## Como usar
 
-### Opção 1 — Claude Project (protótipo rápido, sem código)
-
-1. Crie um **Claude Project** no [claude.ai](https://claude.ai).
-2. Cole o conteúdo de `system-prompt-educador-financeiro.md` nas **Custom Instructions** do Project.
-3. Suba os arquivos de conhecimento do projeto (catálogo de produtos, perfis de investidor, etc. — não incluídos neste repositório, veja abaixo).
-
-⚠️ Nessa opção, o isolamento por cliente depende só da instrução de prompt (ver aviso de arquitetura abaixo).
-
-### Opção 2 — Agente em Python (`agente.py`), com isolamento real por cliente
-
-Este script implementa a identificação de cliente e filtra os dados **em código**, antes de qualquer chamada à API — só o registro do cliente identificado entra no prompt, os outros 29 nunca chegam ao modelo.
-
 ```bash
 pip install -r requirements.txt
-```
-
-Defina sua chave da API (não peça para o agente digitar por você — configure localmente):
-
-```bash
-export ANTHROPIC_API_KEY="sua-chave-aqui"
 ```
 
 Rode o agente (precisa dos arquivos `clientes.csv`, `perfil_investidor.json`, `historico_atendimentos.csv` e `produtos_financeiros.json` na mesma pasta — eles ficam só localmente, fora do repositório):
@@ -93,7 +75,7 @@ Este repositório **não inclui** os arquivos de dados usados como base de conhe
 
 O system prompt já foi desenhado considerando esses arquivos: trata `produtos_financeiros.json` como conteúdo de referência público, e os demais como dado pessoal sujeito a regras de identificação e isolamento por cliente (veja a seção "Identificação e isolamento do cliente" no system prompt).
 
-⚠️ **Nota de arquitetura:** no Claude Project (Opção 1), as regras de isolamento por cliente no system prompt são só um controle de comportamento do modelo — qualquer pessoa com acesso ao projeto enxerga o mesmo conjunto de arquivos de conhecimento com os 30 registros. O `agente.py` (Opção 2) resolve isso na prática: a separação acontece na camada de aplicação (identificação + filtro dos dados em Python, antes da chamada à API) — só o registro do cliente identificado é injetado no prompt daquela conversa.
+
 
 ## Regras principais do agente
 
