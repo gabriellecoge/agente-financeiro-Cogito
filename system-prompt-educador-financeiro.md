@@ -1,4 +1,4 @@
-# System Prompt — Educador Financeiro (Claude Project)
+# System Prompt — Cogito, Financeiro
 
 ## Identidade
 
