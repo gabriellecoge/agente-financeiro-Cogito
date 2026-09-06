@@ -6,7 +6,7 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 
 - [`system-prompt-educador-financeiro.md`](./system-prompt-educador-financeiro.md) — o system prompt completo: identidade, público-alvo, tom de voz, regras do que o agente faz e nunca faz, estratégias de segurança e anti-alucinação, e as regras de identificação/isolamento de cliente para o cenário de atendimento individual.
 - [`dados_cliente.py`](./dados_cliente.py) — lógica compartilhada de identificação e isolamento de cliente (carregar dados, identificar pelo nome, filtrar só o registro daquela pessoa, montar o system prompt final). Usada pelos dois agentes abaixo para não duplicar a parte crítica de segurança.
-- [`agente.py`](./agente.py) — agente via **Claude API** (`claude-opus-5`). Melhor qualidade de resposta e aderência às regras; precisa de `ANTHROPIC_API_KEY` e tem custo por uso.
+- [`agente.py`](./agente.py) — agente via **Claude API** (`claude-opus-5`). Melhor qualidade de resposta e aderência às regras; precisa de `ANTHROPIC_API_KEY` (não coberto no "Como usar" abaixo porque este projeto roda sem chave de API — veja o código do arquivo se quiser usá-lo).
 - [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.1:8b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
 - [`streamlit_app.py`](./streamlit_app.py) — interface web (chat) para o agente local, com a identidade visual "Cogito, Financeiro" (editorial, arestas retas, vermelho só como acento). Reaproveita `dados_cliente.py` e o modelo configurado em `agente_local.py`.
 - [`assets/avatar_cogito.png`](./assets/avatar_cogito.png) — avatar do assistente no chat (quadrado preto com a vírgula vermelha), gerado a partir da fonte Bodoni Moda.
@@ -14,21 +14,11 @@ Protótipo de uma assistente virtual de **educação financeira** — não de co
 
 ## Como usar
 
-```bash
-pip install -r requirements.txt
-```
+Precisa dos arquivos `clientes.csv`, `perfil_investidor.json`, `historico_atendimentos.csv` e `produtos_financeiros.json` na mesma pasta — eles ficam só localmente, fora do repositório. As duas opções abaixo rodam sem chave de API, com um modelo aberto local via Ollama.
 
-Rode o agente (precisa dos arquivos `clientes.csv`, `perfil_investidor.json`, `historico_atendimentos.csv` e `produtos_financeiros.json` na mesma pasta — eles ficam só localmente, fora do repositório):
+### Opção 1 — Agente local com Ollama (`agente_local.py`), sem custo de API
 
-```bash
-python agente.py
-```
-
-O script pede o **nome completo** antes de qualquer coisa, busca em `clientes.csv` e só então inicia a conversa — usando exclusivamente o registro daquele cliente. Se dois clientes tiverem o mesmo nome (não acontece nos 30 registros de teste, mas pode acontecer numa base maior), o script pede o `cliente_id` só para desempatar entre eles — nunca aceita um ID de fora desse grupo, então não dá pra pular a etapa do nome sabendo só um ID.
-
-### Opção 3 — Agente local com Ollama (`agente_local.py`), sem custo de API
-
-Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas com um modelo aberto rodando localmente (sem chave, sem custo, sem internet depois de baixado).
+Mesma lógica de identificação/isolamento de `dados_cliente.py`, gerando as respostas com um modelo aberto rodando localmente (sem chave, sem custo, sem internet depois de baixado).
 
 1. Instale o [Ollama](https://ollama.com) e baixe o modelo (`llama3.1:8b`, ~4,7 GB — segue melhor o contexto/system prompt que modelos menores como `llama3.2:3b`, mas exige mais RAM):
    ```bash
@@ -44,9 +34,9 @@ Mesma lógica de identificação/isolamento da Opção 2, mas gera as respostas 
 
 Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem à pergunta "você acha que eu deveria comprar ações agora?" (não recomendou, explicou considerações gerais, sugeriu buscar um profissional), mas também **inventou uma taxa de CDI específica** ao explicar o conceito — um exemplo real do risco de alucinação que o system prompt tenta mitigar, e que um modelo pequeno segue com menos consistência que o Claude. Em hardware modesto (sem GPU, pouca RAM), a geração também pode ser lenta, especialmente na primeira pergunta de cada conversa.
 
-### Opção 4 — Interface web (`streamlit_app.py`), marca "Cogito, Financeiro"
+### Opção 2 — Interface web (`streamlit_app.py`), marca "Cogito, Financeiro"
 
-Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 3, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento (no máximo três lugares por tela), cinza só para estado desabilitado, sem cantos arredondados, título em Bodoni Moda e corpo em Archivo.
+Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 1, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento (no máximo três lugares por tela), cinza só para estado desabilitado, sem cantos arredondados, título em Bodoni Moda e corpo em Archivo.
 
 ```bash
 pip install -r requirements.txt
@@ -58,7 +48,7 @@ Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit
 Funcionalidades da interface:
 
 - **Identificação por nome**, com três desfechos possíveis:
-  1. Nome bate com um cliente da base oficial → usa os dados reais dele (Opção 2/3).
+  1. Nome bate com um cliente da base oficial → usa os dados reais dele.
   2. Nome bate com **mais de um** cliente → pede `cliente_id` para desempatar.
   3. Nome **não está na base** → não é tratado como erro. A pessoa segue para duas telas curtas (Etapa 2 de 3 e Etapa 3 de 3) onde informa, por faixas aproximadas, patrimônio, renda, investimentos atuais, objetivo e perfil de risco. Esses dados existem **só durante a sessão do navegador** - não são salvos em nenhum arquivo - e são injetados no system prompt marcados como "autodeclarados, não verificados" (`dados_cliente.montar_system_prompt_novo_cliente`). Qualquer campo pode ser pulado com "Prefiro não dizer" (vira "Não informado").
   4. **"Prefiro não dizer"** já na etapa 1 pula tudo isso e entra num modo genérico, sem nome nem perfil.
@@ -74,8 +64,6 @@ Funcionalidades da interface:
 Este repositório **não inclui** os arquivos de dados usados como base de conhecimento (`produtos_financeiros.json`, `perfil_investidor.json`, `clientes.csv`, `historico_atendimentos.csv`, `transacoes.csv`). Eles contêm dados fictícios de clientes (nome, renda, patrimônio, perfil de risco, histórico de atendimento) gerados para prototipagem, e ficam de fora do repositório para não expor esse formato de dado publicamente — mesmo sendo sintético.
 
 O system prompt já foi desenhado considerando esses arquivos: trata `produtos_financeiros.json` como conteúdo de referência público, e os demais como dado pessoal sujeito a regras de identificação e isolamento por cliente (veja a seção "Identificação e isolamento do cliente" no system prompt).
-
-
 
 ## Regras principais do agente
 
