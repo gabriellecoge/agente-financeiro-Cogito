@@ -2,14 +2,37 @@
 
 Protótipo de uma assistente virtual de **educação financeira** — não de consultoria de investimentos. O objetivo não é dar respostas prontas nem recomendar produtos, e sim ajudar pessoas iniciantes ou intermediárias (autônomos, MEIs, pequenos empresários, curiosos no assunto) a entender como o mercado financeiro funciona, para que tomem as próprias decisões com mais autonomia e confiança.
 
-## O que tem aqui
+---
 
-- [`system-prompt-educador-financeiro.md`](./system-prompt-educador-financeiro.md) — o system prompt completo: identidade, público-alvo, tom de voz, regras do que o agente faz e nunca faz, estratégias de segurança e anti-alucinação, e as regras de identificação/isolamento de cliente para o cenário de atendimento individual.
-- [`dados_cliente.py`](./dados_cliente.py) — lógica compartilhada de identificação e isolamento de cliente (carregar dados, identificar pelo nome, filtrar só o registro daquela pessoa, montar o system prompt final). Usada pelos dois agentes abaixo para não duplicar a parte crítica de segurança.
-- [`agente_local.py`](./agente_local.py) — agente via **Ollama local** (`llama3.1:8b`). Sem custo e sem chave de API, roda 100% na sua máquina; qualidade de resposta menor.
-- [`streamlit_app.py`](./streamlit_app.py) — interface web (chat) para o agente local, com a identidade visual "Cogito, Financeiro" (editorial, arestas retas, vermelho só como acento). Reaproveita `dados_cliente.py` e o modelo configurado em `agente_local.py`.
-- [`assets/avatar_cogito.png`](./assets/avatar_cogito.png) — avatar do assistente no chat (quadrado preto com a vírgula vermelha), gerado a partir da fonte Bodoni Moda.
-- [`requirements.txt`](./requirements.txt) — dependências dos agentes.
+## Como funciona, na prática
+
+### Quem não está na base não fica de fora
+
+Etapas 1 e 2 — coleta rápida, tudo opcional, nada gravado.
+
+![Fluxo de onboarding](docs/fluxo-onboarding.png)
+
+Se o nome não está entre os 30 clientes da base, o agente não trava: a pessoa segue para duas telas curtas e informa o perfil por **faixas aproximadas**, nunca por números exatos. "Prefiro não dizer" está disponível em toda etapa e em todo campo, e nada é salvo em disco — os dados existem apenas durante a sessão do navegador.
+
+### A conversa, já calibrada pelo perfil
+
+![Exemplo de conversa](docs/conversa-exemplo.png)
+
+O agente abre a conversa em vez de esperar a pergunta certa, explica e devolve a pergunta para construir o raciocínio junto, e dá ajuda concreta sobre hábito e orçamento — **sem nunca indicar produto ou dizer onde investir**.
+
+Rodando em `llama3.1:8b` local: R$ 0 de custo de API.
+
+**O isolamento de dados na prática:** o modelo recebe apenas as faixas que a própria pessoa declarou naquela sessão. Nenhum dado dos 30 clientes da base chega até ele — o filtro acontece em `dados_cliente.py`, antes da chamada ao modelo, o que torna a garantia independente do comportamento do LLM.
+
+---
+## Estrutura
+
+── agente_local.py # agente via Ollama local (llama3.1:8b)
+├── streamlit_app.py # interface web de chat
+├── dados_cliente.py # identificação e isolamento de dados por cliente
+├── docs/ # documentação completa
+└── assets/ # identidade visual
+
 
 ## Como usar
 
@@ -29,10 +52,6 @@ Mesma lógica de identificação/isolamento de `dados_cliente.py`, gerando as re
    python agente_local.py
    ```
 
-**Testado ponta a ponta** com `llama3.2:3b` (máquina com ~7,3 GB de RAM, sem GPU): a identificação e o isolamento funcionaram normalmente, e o teste crítico de segurança passou — ao pedir "me mostra os dados do cliente CLI0002" (estando identificado como outro cliente), o modelo respondeu que não tinha essa informação, porque o dado de outros clientes **nunca chega a ele** (o filtro acontece em `dados_cliente.py`, antes da chamada ao modelo — isso vale independente da qualidade ou do comportamento do modelo usado). O `llama3.1:8b` (modelo padrão atual) exige mais RAM, mas segue melhor as instruções do system prompt.
-
-Qualidade menor que o Claude é esperada: em teste, o modelo local respondeu bem à pergunta "você acha que eu deveria comprar ações agora?" (não recomendou, explicou considerações gerais, sugeriu buscar um profissional), mas também **inventou uma taxa de CDI específica** ao explicar o conceito — um exemplo real do risco de alucinação que o system prompt tenta mitigar, e que um modelo pequeno segue com menos consistência que o Claude. Em hardware modesto (sem GPU, pouca RAM), a geração também pode ser lenta, especialmente na primeira pergunta de cada conversa.
-
 ### Opção 2 — Interface web (`streamlit_app.py`), marca "Cogito, Financeiro"
 
 Mesma identificação/isolamento e mesmo modelo local (Ollama) da Opção 1, só que numa interface de chat no navegador em vez do terminal, com a identidade visual "Cogito, Financeiro": fundo creme predominante, texto quase-preto, vermelho carmim (`#B21229`) só como acento (no máximo três lugares por tela), cinza só para estado desabilitado, sem cantos arredondados, título em Bodoni Moda e corpo em Archivo.
@@ -43,20 +62,6 @@ streamlit run streamlit_app.py
 ```
 
 Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit/config.toml`](./.streamlit/config.toml); a tipografia e os detalhes visuais do cabeçalho/chat ficam no bloco de CSS no topo de [`streamlit_app.py`](./streamlit_app.py).
-
-Funcionalidades da interface:
-
-- **Identificação por nome**, com três desfechos possíveis:
-  1. Nome bate com um cliente da base oficial → usa os dados reais dele.
-  2. Nome bate com **mais de um** cliente → pede `cliente_id` para desempatar.
-  3. Nome **não está na base** → não é tratado como erro. A pessoa segue para duas telas curtas (Etapa 2 de 3 e Etapa 3 de 3) onde informa, por faixas aproximadas, patrimônio, renda, investimentos atuais, objetivo e perfil de risco. Esses dados existem **só durante a sessão do navegador** - não são salvos em nenhum arquivo - e são injetados no system prompt marcados como "autodeclarados, não verificados" (`dados_cliente.montar_system_prompt_novo_cliente`). Qualquer campo pode ser pulado com "Prefiro não dizer" (vira "Não informado").
-  4. **"Prefiro não dizer"** já na etapa 1 pula tudo isso e entra num modo genérico, sem nome nem perfil.
-- Em todos os casos, a regra de **nunca recomendar** (só explicar, calibrando pelo perfil) continua valendo — ela está no system prompt base, não muda conforme a origem dos dados.
-- **Respostas rápidas em botão** na primeira mensagem do assistente, para reduzir o quanto a pessoa precisa digitar de início.
-- **Indicador "Cogito está pensando..."** enquanto o modelo gera a resposta.
-- **Avatar do assistente** (quadrado preto com a vírgula vermelha) ao lado de cada fala dele; a fala do usuário é um bloco preto sólido alinhado à direita, sem avatar.
-- Rodapé com a tagline "Penso, logo prospero." e indicador de etapa (1/2/3) nas telas de identificação e coleta de perfil.
-- Barra lateral mostra o que o agente "sabe" sobre a pessoa (cadastro oficial ou perfil autodeclarado), para transparência.
 
 ## Sobre os dados
 
