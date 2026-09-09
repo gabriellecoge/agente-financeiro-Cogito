@@ -31,18 +31,8 @@ Três diferenciais concretos: (1) isolamento de dados entre clientes acontece **
 
 ---
 
-## Checklist do Pitch
-
-- [ ] Duração máxima de 3 minutos
-- [ ] Problema claramente definido
-- [ ] Solução demonstrada na prática
-- [ ] Diferencial explicado
-- [ ] Áudio e vídeo com boa qualidade
-
----
-
 ## Link do Vídeo
 
 > Cole aqui o link do seu pitch (YouTube, Loom, Google Drive, etc.)
 
-[Link do vídeo — grave a demonstração seguindo o roteiro acima e cole o link aqui]
+https://youtu.be/HiwQqNzwYnA?si=SwgEXxe-x81S6vMa
