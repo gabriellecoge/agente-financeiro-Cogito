@@ -1,13 +1,3 @@
-"""Agente educador financeiro - protótipo de atendimento individual via Claude API.
-
-Identifica o cliente (nome + cliente_id) e injeta no prompt SOMENTE o registro
-dele, filtrado em Python antes de qualquer chamada à API - a separação por
-cliente acontece na camada de aplicação, não só via instrução de prompt.
-
-A lógica de identificação/isolamento fica em dados_cliente.py, compartilhada
-com agente_local.py (versão Ollama, sem custo de API).
-"""
-
 import os
 import sys
 
