@@ -7,7 +7,6 @@ Este é um protótipo de educação financeira, não de consultoria de investime
 ## Arquitetura
 
 - [dados_cliente.py](dados_cliente.py) é a camada compartilhada de carregamento, identificação e isolamento. Alterações nela afetam `agente.py` e `agente_local.py` e exigem atenção especial à privacidade.
-- [agente.py](agente.py) usa a API da Anthropic e requer `ANTHROPIC_API_KEY` configurada no ambiente.
 - [agente_local.py](agente_local.py) usa Ollama e requer o serviço em execução e o modelo `llama3.1:8b` baixado.
 - Os caminhos dos dados são resolvidos relativos ao diretório do módulo; preserve esse comportamento.
 
@@ -21,8 +20,6 @@ Este é um protótipo de educação financeira, não de consultoria de investime
 
 ## Gotchas conhecidos
 
-- O markdown do Streamlit lê `$..texto..$` como delimitador de LaTeX. Como o app fala de "R$" o tempo todo, duas ocorrências de "R$" na mesma string viram uma fórmula renderizada errado. Sempre passe texto exibido em `st.markdown`/`st.caption` (mensagens de chat, resumos de perfil) por `escapar_dolar()` antes de renderizar - não escape o texto que fica em `st.session_state.mensagens`, só a cópia exibida.
-- CSS injetado via `st.markdown(..., unsafe_allow_html=True)`: nunca deixe linha em branco dentro de um bloco `<style>` - o parser de markdown do Streamlit trata isso como fim do bloco HTML e o CSS vaza como texto visível na página.
 - Regras de cor específicas (`.cogito-*`) competem em especificidade com a regra geral `.stApp h1,h2,h3,h4,p,label,span,div { color: ... }` usada para garantir contraste nos widgets nativos do Streamlit. Qualquer cor customizada nova precisa de `!important`, senão a regra geral vence silenciosamente.
 - **O system prompt sozinho passa de 5-6 mil tokens** (base + catálogo de produtos + registro do cliente). O padrão do Ollama (`num_ctx=4096`) é insuficiente e trunca o contexto **silenciosamente, sem erro** - o modelo simplesmente responde como se não tivesse os dados do cliente (foi um bug real, reportado pelo usuário: perguntar sobre os próprios investimentos/renda de um cliente da base oficial retornava "não há informações"). Os dois pontos de chamada (`agente_local.py` e `streamlit_app.py`) passam `options={"num_ctx": NUM_CTX}` (definido em `agente_local.py`, hoje 8192) - se o system prompt crescer muito mais, aumente esse valor e confirme com `resp["prompt_eval_count"]` que o prompt inteiro está sendo avaliado, não só uma fração. Como segunda camada de proteção, `dados_cliente.py` monta o bloco do cliente **depois** do catálogo de produtos (não antes) - se o contexto ainda assim estourar, é o catálogo genérico que deve ser cortado primeiro, nunca o registro da pessoa.
 
@@ -33,12 +30,5 @@ python -m pip install -r requirements.txt
 python agente_local.py
 ```
 
-Para usar Claude, configure `ANTHROPIC_API_KEY` no ambiente e execute `python agente.py`. No PowerShell, a configuração temporária pode ser feita com `$env:ANTHROPIC_API_KEY = "sua-chave"`; nunca peça ou registre a chave em arquivos do projeto.
-
 Não há suíte de testes, lint ou configuração de CI. Ao alterar a lógica compartilhada, faça pelo menos uma verificação manual de identificação correta, rejeição de dados inconsistentes e isolamento do contexto antes de executar um agente.
 
-## Estilo
-
-- Mantenha código e documentação em português do Brasil, seguindo os nomes e padrões já usados.
-- Prefira mudanças pequenas e compatíveis com as interfaces existentes.
-- Atualize o README quando mudar comandos, dependências ou o fluxo de uso.
