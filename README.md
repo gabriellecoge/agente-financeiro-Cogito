@@ -27,12 +27,14 @@ Rodando em `llama3.1:8b` local: R$ 0 de custo de API.
 ---
 ## Estrutura
 
-── agente_local.py # agente via Ollama local (llama3.1:8b)
-├── streamlit_app.py # interface web de chat
-├── dados_cliente.py # identificação e isolamento de dados por cliente
-├── docs/ # documentação completa
-└── assets/ # identidade visual
-
+```
+├── agente.py            # agente via API
+├── agente_local.py      # agente via Ollama local (llama3.1:8b)
+├── streamlit_app.py     # interface web de chat
+├── dados_cliente.py     # identificação e isolamento de dados por cliente
+├── docs/                # documentação completa
+└── assets/              # identidade visual
+```
 
 ## Como usar
 
@@ -68,6 +70,18 @@ Abre em `http://localhost:8501`. O tema (cores, fonte base) fica em [`.streamlit
 Este repositório **não inclui** os arquivos de dados usados como base de conhecimento (`produtos_financeiros.json`, `perfil_investidor.json`, `clientes.csv`, `historico_atendimentos.csv`, `transacoes.csv`). Eles contêm dados fictícios de clientes (nome, renda, patrimônio, perfil de risco, histórico de atendimento) gerados para prototipagem, e ficam de fora do repositório para não expor esse formato de dado publicamente — mesmo sendo sintético.
 
 O system prompt já foi desenhado considerando esses arquivos: trata `produtos_financeiros.json` como conteúdo de referência público, e os demais como dado pessoal sujeito a regras de identificação e isolamento por cliente (veja a seção "Identificação e isolamento do cliente" no system prompt).
+
+## Documentação
+
+Documentação completa do projeto na pasta [`docs/`](docs/):
+
+| Documento | Conteúdo |
+|---|---|
+| [01 — Documentação do agente](docs/01-documentacao-agente.md) | Arquitetura e decisões de projeto |
+| [02 — Base de conhecimento](docs/02-base-conhecimento.md) | Fontes e conteúdo que sustentam as respostas |
+| [03 — Prompts](docs/03-prompts.md) | System prompt e estratégias anti-alucinação |
+| [04 — Métricas](docs/04-metricas.md) | Avaliação de qualidade das respostas |
+| [05 — Pitch](docs/05-pitch.md) | Apresentação do produto |
 
 ## Regras principais do agente
 
